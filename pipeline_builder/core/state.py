@@ -53,13 +53,13 @@ class ArtifactStore:
 
 
 class InternalStore:
-    """Thread-safe store for baton's own runtime bookkeeping.
+    """Thread-safe store for pipeline_builder's own runtime bookkeeping.
 
     Completely separate from :class:`ArtifactStore` — user code never
     touches this.  Stores: skip flags, loop round counters, goal-check
     counters, pipeline fingerprint, stored hierarchy.
 
-    Transient keys (skip flags — ``__baton_skip_*``) are NOT persisted
+    Transient keys (skip flags — ``__pb_skip_*``) are NOT persisted
     across session saves; all other keys are.
     """
     def __init__(self) -> None:
@@ -85,11 +85,11 @@ class InternalStore:
     def to_persist(self) -> dict[str, Any]:
         """Return only the keys that should survive a session save/resume.
 
-        Skip flags (``__baton_skip_*``) are transient and excluded.
+        Skip flags (``__pb_skip_*``) are transient and excluded.
         """
         with self._lock:
             return {k: v for k, v in self._data.items()
-                    if not k.startswith("__baton_skip_")}
+                    if not k.startswith("__pb_skip_")}
 
 
 class StageRecord:
@@ -123,7 +123,7 @@ class State:
     ) -> None:
         self.session_id = session_id or uuid.uuid4().hex[:8]
         self.artifacts = ArtifactStore()
-        self._internal = InternalStore()   # baton-private bookkeeping
+        self._internal = InternalStore()   # pipeline_builder bookkeeping
         self._nodes: dict[str, list[BaseModel]] = {}
         self._history: list[StageRecord] = []
         # P2: per-stage snapshots taken before execution
@@ -288,7 +288,7 @@ class State:
     def snapshot_before(self, stage_name: str) -> None:
         """Deep-copy nodes, user artifacts, and typed data before a stage runs.
 
-        ``_internal`` (baton bookkeeping) is NOT snapshotted — its values
+        ``_internal`` (pipeline_builder bookkeeping) is NOT snapshotted — its values
         survive rollback unchanged, which is the correct behaviour for skip
         flags, loop round counters, etc.
         """
@@ -302,7 +302,7 @@ class State:
     def restore_to(self, stage_name: str) -> None:
         """Restore nodes and user artifacts to the state before stage_name ran.
 
-        Internal __baton_* artifact keys are preserved from the current state
+        Internal __pb_* artifact keys are preserved from the current state
         so the scheduler's own tracking (skip flags, loop rounds, etc.) is not
         disturbed by the rollback.
         """
@@ -317,7 +317,7 @@ class State:
                 return
             snap = self._snapshots[stage_name]
             self._nodes = copy.deepcopy(snap["nodes"])
-            # Restore user artifacts (pure user data — no __baton_* keys).
+            # Restore user artifacts (pure user data — no __pb_* keys).
             self.artifacts._data = copy.deepcopy(snap["artifacts"])
             # _internal is NOT restored: skip flags, loop counters, etc.
             # must survive rollback so the scheduler stays coherent.
@@ -343,7 +343,7 @@ class State:
         - Nodes: only levels with a schema entry are serialized.
         - Artifacts: pure user data — serialized as-is; non-JSON-serializable
           values are dropped with a warning.
-        - Internal: baton bookkeeping (loop counters, gc counters, fingerprint)
+        - Internal: pipeline_builder bookkeeping (loop counters, gc counters, fingerprint)
           serialized separately; transient skip flags are excluded.
         """
         with self._lock:
@@ -394,9 +394,9 @@ class State:
         # Restore internal bookkeeping (loop counters, gc counters, fingerprint…)
         for key, value in data.get("internal", {}).items():
             state._internal.set(key, value)
-        # Backwards compatibility: old sessions stored __baton_* in artifacts
+        # Backwards compatibility: old sessions stored __pb_* in artifacts
         for key in list(data.get("artifacts", {}).keys()):
-            if key.startswith("__baton_"):
+            if key.startswith("__pb_"):
                 state._internal.set(key, state.artifacts._data.pop(key))
         state._messages = [AgentMessage.from_dict(m) for m in data.get("messages", [])]
         # Restore typed state data if present in snapshot

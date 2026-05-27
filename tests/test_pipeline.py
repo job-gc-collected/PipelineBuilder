@@ -578,9 +578,9 @@ def test_loop_round_counter_persisted_across_resume(tmp_path):
     # Round counter must be persisted; verify it appears in saved state JSON
     import json
     snap = json.loads((tmp_path / f"{result.session_id}.json").read_text())
-    # __baton_loop_round_check should be in the persisted internal store
+    # __pb_loop_round_check should be in the persisted internal store
     # (moved from "artifacts" to "internal" in Phase 1 of the refactor)
-    assert "__baton_loop_round_check" in snap.get("internal", snap.get("artifacts", {}))
+    assert "__pb_loop_round_check" in snap.get("internal", snap.get("artifacts", {}))
 
 
 # ============================================================

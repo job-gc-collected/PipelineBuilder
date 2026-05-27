@@ -17,7 +17,7 @@ First stable release.
 - **PipelineExecutor**: execution logic extracted from `Pipeline` into a dedicated
   `PipelineExecutor` class (`baton/core/executor.py`).  `Pipeline` is now a thin
   registration + configuration object.
-- **InternalStore**: baton's own bookkeeping (`__baton_*` keys) moved to a private
+- **InternalStore**: pipeline_builder's own bookkeeping (`__pb_*` keys) moved to a private
   `State._internal` store, completely separate from user-visible `state.artifacts`.
 
 ### New features
@@ -58,7 +58,7 @@ First stable release.
 
 - `pipe.run()` now calls `asyncio.run(pipe.run_async(...))`.  If called from an
   already-running event loop, raises `RuntimeError` with a helpful message.
-- `state.artifacts` no longer contains `__baton_*` internal keys.  Internal state
+- `state.artifacts` no longer contains `__pb_*` internal keys.  Internal state
   lives in `state._internal` (not user-accessible).
 - `to_dict()` serialization format: internal keys now live under `"internal"` key
   (backwards-compatible load path for old sessions that stored them in `"artifacts"`).

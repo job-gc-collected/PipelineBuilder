@@ -164,11 +164,11 @@ class PipelineExecutor:
                 break
 
             # Handle router-set skip flags before deciding what to run.
-            skipped = [s for s in ready if state._internal.get(f"__baton_skip_{s.__name__}")]
+            skipped = [s for s in ready if state._internal.get(f"__pb_skip_{s.__name__}")]
             to_run  = [s for s in ready if s not in skipped]
 
             for s in skipped:
-                state._internal.set(f"__baton_skip_{s.__name__}", False)
+                state._internal.set(f"__pb_skip_{s.__name__}", False)
                 completed_in_group.add(s.__name__)
 
             # group.batch_extend_mode() tells us which stages need extend_nodes
@@ -214,7 +214,7 @@ class PipelineExecutor:
             return index + 1
 
         if check_skip:
-            skip_key = f"__baton_skip_{step.__name__}"
+            skip_key = f"__pb_skip_{step.__name__}"
             if state._internal.get(skip_key):
                 state._internal.set(skip_key, False)
                 return index + 1
@@ -338,7 +338,7 @@ class PipelineExecutor:
         max_rounds = step._baton_max_rounds
         exit_on = step._baton_exit_on
 
-        round_key = f"__baton_loop_round_{step.__name__}"
+        round_key = f"__pb_loop_round_{step.__name__}"
         current_round = state._internal.get(round_key, 0)
         verdict: str = step(state)
         state.artifacts.set(f"_loop_result_{step.__name__}", verdict)
@@ -360,7 +360,7 @@ class PipelineExecutor:
 
         for t in step._baton_targets:
             if t != target_name:
-                state._internal.set(f"__baton_skip_{t}", True)
+                state._internal.set(f"__pb_skip_{t}", True)
 
         for i, s in enumerate(self.pipe._steps):
             if s.__name__ == target_name:
@@ -395,7 +395,7 @@ class PipelineExecutor:
             if result.action == "route" and result.target:
                 for t in getattr(step, "_baton_targets", []):
                     if t != result.target:
-                        state._internal.set(f"__baton_skip_{t}", True)
+                        state._internal.set(f"__pb_skip_{t}", True)
                 for i, s in enumerate(self.pipe._steps):
                     if s.__name__ == result.target:
                         return i
@@ -446,8 +446,8 @@ class PipelineExecutor:
         for gc in self.pipe._goal_checks:
             interval = gc._baton_gc_interval
             max_checks = gc._baton_gc_max_checks
-            count_key = f"__baton_gc_stage_{gc.__name__}"
-            fired_key = f"__baton_gc_fired_{gc.__name__}"
+            count_key = f"__pb_gc_stage_{gc.__name__}"
+            fired_key = f"__pb_gc_fired_{gc.__name__}"
 
             stage_count = state._internal.get(count_key, 0) + 1
             state._internal.set(count_key, stage_count)

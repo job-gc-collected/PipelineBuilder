@@ -144,7 +144,7 @@ def test_fingerprint_stored_in_new_session(tmp_path):
         return [Task(goal=goal.name, action="x")]
 
     result = pipe.run(goal=[Goal(name="g")])
-    stored_fp = result._internal.get("__baton_pipeline_fingerprint")
+    stored_fp = result._internal.get("__pb_pipeline_fingerprint")
     assert stored_fp is not None
     assert stored_fp == pipe._pipeline_fingerprint()
 

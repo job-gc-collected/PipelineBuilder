@@ -419,7 +419,7 @@ class Pipeline:
 
         # Support both new ("internal") and old ("artifacts") storage layout
         internal = {**data.get("artifacts", {}), **data.get("internal", {})}
-        stored_fp = internal.get("__baton_pipeline_fingerprint", "")
+        stored_fp = internal.get("__pb_pipeline_fingerprint", "")
         current_fp = self._pipeline_fingerprint()
         if stored_fp == current_fp:
             return True, "Pipeline fingerprint matches"
@@ -427,7 +427,7 @@ class Pipeline:
         current_stage_names = {
             s.__name__ for s in self._steps if getattr(s, "_baton_type", None) == "stage"
         }
-        stored_hierarchy = internal.get("__baton_stored_hierarchy")
+        stored_hierarchy = internal.get("__pb_stored_hierarchy")
 
         from .versioning import check_resume_compatibility, CompatibilityError
         try:
@@ -449,13 +449,13 @@ class Pipeline:
 
     def _init_session_versioning(self, state: State) -> None:
         """Store fingerprint and hierarchy in a new session's artifacts."""
-        state._internal.set("__baton_pipeline_fingerprint", self._pipeline_fingerprint())
-        state._internal.set("__baton_stored_hierarchy", self.hierarchy)
+        state._internal.set("__pb_pipeline_fingerprint", self._pipeline_fingerprint())
+        state._internal.set("__pb_stored_hierarchy", self.hierarchy)
 
     def _check_resume_versioning(self, state: State) -> None:
         """On resume: compare fingerprints and update completed_stages if needed."""
         from .versioning import check_resume_compatibility, CompatibilityError
-        stored_fp = state._internal.get("__baton_pipeline_fingerprint", "")
+        stored_fp = state._internal.get("__pb_pipeline_fingerprint", "")
         current_fp = self._pipeline_fingerprint()
         if stored_fp == current_fp:
             return  # identical — nothing to do
@@ -463,7 +463,7 @@ class Pipeline:
         current_stage_names = {
             s.__name__ for s in self._steps if getattr(s, "_baton_type", None) == "stage"
         }
-        stored_hierarchy = state._internal.get("__baton_stored_hierarchy")
+        stored_hierarchy = state._internal.get("__pb_stored_hierarchy")
 
         updated = check_resume_compatibility(
             state.session_id,
@@ -476,8 +476,8 @@ class Pipeline:
         )
         # Apply remapped completed stages and update stored fingerprint
         state._completed_stages = updated
-        state._internal.set("__baton_pipeline_fingerprint", current_fp)
-        state._internal.set("__baton_stored_hierarchy", self.hierarchy)
+        state._internal.set("__pb_pipeline_fingerprint", current_fp)
+        state._internal.set("__pb_stored_hierarchy", self.hierarchy)
 
     def _save_snapshot_to_backend(self, state: State, stage_name: str) -> None:
         """After snapshot_before(), persist it to the backend so rollback survives crashes."""
@@ -494,7 +494,7 @@ class Pipeline:
         # Embed typed state data in the artifacts dict under a reserved key.
         artifacts = dict(snap["artifacts"])
         if "data" in snap:
-            artifacts["__baton_typed_state_data__"] = snap["data"].model_dump(mode="json")
+            artifacts["__pb_typed_state_data__"] = snap["data"].model_dump(mode="json")
         self._backend.save_snapshot(
             state.session_id, stage_name, nodes_serialized, artifacts
         )
@@ -517,9 +517,9 @@ class Pipeline:
                 nodes[level] = [schema.model_validate(d) for d in nodes_data]
         # Extract typed state data from the reserved key.
         artifacts = {k: v for k, v in artifacts_with_data.items()
-                     if k != "__baton_typed_state_data__"}
+                     if k != "__pb_typed_state_data__"}
         snap: dict = {"nodes": nodes, "artifacts": artifacts}
-        data_raw = artifacts_with_data.get("__baton_typed_state_data__")
+        data_raw = artifacts_with_data.get("__pb_typed_state_data__")
         if data_raw is not None and self._state_schema:
             try:
                 snap["data"] = self._state_schema.model_validate(data_raw)

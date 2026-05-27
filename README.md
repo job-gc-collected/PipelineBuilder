@@ -1,10 +1,10 @@
-# Baton
+# PipelineBuilder
 
 **Code schedules. AI executes. State is truth.**
 
 Most AI workflow frameworks let the AI decide what to do next. That works for demos. In production, it means unpredictable execution paths, hard-to-test pipelines, and human review bolted on as an afterthought.
 
-Baton flips this: **the scheduler is deterministic Python code** and **AI only ever executes one assigned task**. Human checkpoints, goal self-correction, and structured decomposition are first-class — not callbacks.
+PipelineBuilder flips this: **the scheduler is deterministic Python code** and **AI only ever executes one assigned task**. Human checkpoints, goal self-correction, and structured decomposition are first-class — not callbacks.
 
 ---
 
@@ -25,7 +25,7 @@ pip install "pipeline-builder[anthropic,otel]"     # bundle
 ```python
 import asyncio
 from pydantic import BaseModel
-from baton import Pipeline, State, CheckpointResult, ClaudeAdapter
+from pipeline_builder import Pipeline, State, CheckpointResult, ClaudeAdapter
 
 class PR(BaseModel):
     title: str
@@ -205,7 +205,7 @@ Add explicit cross-level dependencies with `depends_on=["stage_name"]`.
 ## Persistence & crash recovery
 
 ```python
-from baton import SQLiteBackend
+from pipeline_builder import SQLiteBackend
 
 pipe = Pipeline("explore",
                 hierarchy=[...],
@@ -264,7 +264,7 @@ Events: `stage_start`, `stage_complete`, `stage_fail`, `checkpoint`, `loop`, `go
 ### OpenTelemetry
 
 ```python
-from baton import BatonTracer
+from pipeline_builder import BatonTracer
 
 tracer = BatonTracer("my-service")
 pipe = Pipeline("explore", hierarchy=[...], tracer=tracer)
@@ -288,7 +288,7 @@ async def analyze(change, state, ai):
 ## Testing
 
 ```python
-from baton import MockAIAdapter
+from pipeline_builder import MockAIAdapter
 
 def mock_handler(prompt: str, ctx: dict | None) -> str:
     if "requirements" in prompt:
@@ -310,7 +310,7 @@ No API key needed. `MockAIAdapter` is a first-class citizen.
 For complex tool-call dependencies inside a single stage:
 
 ```python
-from baton import DAGSpec, DAGNode
+from pipeline_builder import DAGSpec, DAGNode
 
 @pipe.stage(reads=["probe"], writes=["probe"], fanout="manual")
 async def execute_probes(probe, state, ai):
@@ -326,7 +326,7 @@ async def execute_probes(probe, state, ai):
 
 ## vs LangGraph / ReAct
 
-| | **Baton** | **LangGraph** | **ReAct** |
+| | **PipelineBuilder** | **LangGraph** | **ReAct** |
 |---|---|---|---|
 | Who decides next step? | Code (deterministic) | Code (graph edges) | AI (unpredictable) |
 | Human confirmation | First-class `@checkpoint` | External callback | Not supported |

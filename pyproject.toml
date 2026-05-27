@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pipeline-builder"
+version = "1.0.0"
+authors = [{name = "job-gc-collected", email = "allegory.daybreak@gmail.com"}]
+description = "Code schedules. AI executes. State is truth."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+keywords = ["ai", "pipeline", "workflow", "llm", "orchestration"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "pydantic>=2.0",
+]
+
+[project.scripts]
+pipeline-builder = "pipeline_builder.cli:main"
+
+[project.optional-dependencies]
+# AI providers
+anthropic = ["anthropic>=0.40.0"]
+openai    = ["openai>=1.0.0"]
+
+# Observability
+otel = ["opentelemetry-api>=1.20.0", "opentelemetry-sdk>=1.20.0"]
+
+# Convenience bundles
+all = ["baton[anthropic,openai,otel]"]
+
+# Development
+dev = ["pytest", "ruff", "mypy", "anthropic>=0.40.0", "opentelemetry-sdk>=1.20.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]

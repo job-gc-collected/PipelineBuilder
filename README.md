@@ -6,6 +6,12 @@ Most AI workflow frameworks let the AI decide what to do next. That works for de
 
 PipelineBuilder flips this: **the scheduler is deterministic Python code** and **AI only ever executes one assigned task**. Human checkpoints, goal self-correction, and structured decomposition are first-class — not callbacks.
 
+**Good for:**
+- Batch pipelines that process hundreds of items in parallel and need a human sign-off before the next phase (code review, document analysis, content moderation)
+- Multi-step workflows where a crashed run should resume from the last checkpoint, not restart from scratch
+- Any pipeline where you need to write tests — `MockAIAdapter` replaces real AI calls without changing pipeline logic
+- Workflows that refine their own output: loop until the result meets a goal, with automatic rollback if it drifts
+
 ---
 
 ## Install
